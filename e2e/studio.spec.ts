@@ -181,3 +181,24 @@ test('catalog file import publishes valid data and the imported restriction snap
   expect(pagination.cards.length).toBe(3);
   expect(pagination.page).toBe(2);
 });
+
+test('sync errors remain visible with an actionable diagnostic code', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'État des données', exact: true }).click();
+  await page.route('**/api/catalog', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    await route.fulfill({
+      status: 502,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'NETWORK_TLS',
+        error:
+          'Node.js ne peut pas vérifier le certificat HTTPS. Le catalogue actuel est conservé.',
+      }),
+    });
+  });
+  await page.getByRole('button', { name: 'Synchroniser avec YGOPRODeck', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('NETWORK_TLS');
+  await page.getByRole('button', { name: 'Fermer le message' }).click();
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('certificat HTTPS');
+});

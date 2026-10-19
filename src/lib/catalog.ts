@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Card } from './types';
+import { CatalogSyncError } from './catalog-errors';
 const externalCard = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1),
@@ -28,13 +29,18 @@ export function normalizeCatalog(input: unknown): Card[] {
   return payload.data
     .filter((card) => card.type !== 'Token' && !card.type.includes('Skill'))
     .map((card) => {
-      if (ids.has(card.id)) throw new Error(`Identifiant dupliqué : ${card.id}`);
+      if (ids.has(card.id))
+        throw new CatalogSyncError('CATALOG_DUPLICATE', `Identifiant dupliqué : ${card.id}.`, 400);
       ids.add(card.id);
       const artwork = card.card_images.find((image) => image.id === card.id) || card.card_images[0];
       for (const url of [artwork.image_url, artwork.image_url_small]) {
         const parsed = new URL(url);
         if (parsed.protocol !== 'https:' || parsed.hostname !== 'images.ygoprodeck.com')
-          throw new Error('Source d’image non autorisée.');
+          throw new CatalogSyncError(
+            'CATALOG_IMAGE_SOURCE',
+            'Source d’image non autorisée dans le catalogue.',
+            400,
+          );
       }
       return {
         id: card.id,

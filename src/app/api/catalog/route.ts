@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { normalizeCatalog } from '@/lib/catalog';
 import { catalogStatus, replaceCatalog } from '@/lib/db';
 import { limitedJson, mutationGuard } from '@/lib/http';
+import { CatalogSyncError, describeCatalogFailure, providerHttpError } from '@/lib/catalog-errors';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET() {
@@ -23,29 +24,29 @@ export async function POST(request: Request) {
         signal: AbortSignal.timeout(60_000),
         cache: 'no-store',
       });
-      if (!response.ok) throw new Error(`YGOPRODeck répond HTTP ${response.status}.`);
+      if (!response.ok) throw providerHttpError(response.status);
       data = await response.json();
     }
     const cards = normalizeCatalog(data);
     if (action !== 'import' && cards.length < 1000)
-      throw new Error('Réponse incomplète : le catalogue actuel est conservé.');
+      throw new CatalogSyncError(
+        'CATALOG_INCOMPLETE',
+        'Réponse incomplète : moins de 1 000 cartes reçues.',
+      );
     const current = catalogStatus();
     if (current.source !== 'demo' && cards.length < current.count * 0.9)
-      throw new Error('Baisse de plus de 10 % du catalogue : import refusé par sécurité.');
+      throw new CatalogSyncError(
+        'CATALOG_COUNT_DROP',
+        'Baisse de plus de 10 % du catalogue : import refusé par sécurité.',
+        action === 'import' ? 400 : 422,
+      );
     return NextResponse.json(replaceCatalog(cards, action === 'import' ? 'file' : 'ygoprodeck'));
   } catch (error) {
     const isImport = new URL(request.url).searchParams.get('action') === 'import';
+    const failure = describeCatalogFailure(error, isImport);
     return NextResponse.json(
-      {
-        error: isImport
-          ? 'Import refusé : fichier YGOPRODeck invalide, trop volumineux ou incomplet. Le catalogue est conservé.'
-          : 'Synchronisation indisponible. Vérifiez l’accès à db.ygoprodeck.com ou importez un fichier JSON YGOPRODeck. Le catalogue est conservé.',
-        detail:
-          error instanceof Error && !error.message.includes('[')
-            ? error.message.slice(0, 250)
-            : undefined,
-      },
-      { status: isImport ? 400 : 502 },
+      { error: failure.error, code: failure.code },
+      { status: failure.status },
     );
   } finally {
     syncing = false;

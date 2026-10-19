@@ -50,6 +50,28 @@ Les images sont chargées directement depuis `images.ygoprodeck.com`, avec minia
 
 Domaines requis : `db.ygoprodeck.com`, `images.ygoprodeck.com`. Sans leur autorisation dans les paramètres réseau, le catalogue de démo et les visuels de remplacement restent utilisables. Dans l’environnement de création, l’accès à ces deux domaines était bloqué ; le téléchargement du catalogue complet et des illustrations n’a donc pas été validé en direct. Après application des autorisations, utiliser « Synchroniser » et vérifier la source et le nombre de cartes.
 
+## Dépanner une synchronisation
+
+Une erreur de synchronisation reste affichée dans « État des données », avec un code de diagnostic. Le catalogue actif est conservé en cas d’échec.
+
+| Code                                        | Signification                                     | Vérification                                                         |
+| ------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| `NETWORK_DNS`                               | Node ne résout pas le domaine                     | Connexion et DNS                                                     |
+| `NETWORK_TLS`                               | Certificat HTTPS non vérifiable                   | Certificats système, proxy ou antivirus ; ne pas désactiver TLS      |
+| `NETWORK_TIMEOUT`                           | Téléchargement trop lent ou connexion interrompue | Connexion, puis nouvelle tentative                                   |
+| `NETWORK_CONNECTION`                        | Connexion refusée ou interrompue                  | Pare-feu et configuration du proxy                                   |
+| `PROVIDER_HTTP_403` / `PROVIDER_HTTP_429`   | Accès refusé / limite de requêtes                 | Autorisations réseau / attendre avant de réessayer                   |
+| `CATALOG_SCHEMA` / `CATALOG_JSON`           | Données incompatibles ou JSON invalide            | Copier le message et le champ indiqué ; un accès réseau a pu réussir |
+| `CATALOG_INCOMPLETE` / `CATALOG_COUNT_DROP` | Réponse incomplète                                | Import refusé par sécurité                                           |
+
+Sur la machine qui exécute l’application, cette commande PowerShell teste l’accès de Node au fournisseur sans afficher de configuration privée :
+
+```powershell
+node --use-env-proxy -e "fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php').then(r=>console.log('HTTP',r.status)).catch(e=>console.log(e.message,e.cause?.code,e.cause?.errors?.map(x=>x.code)))"
+```
+
+Un navigateur et Node peuvent utiliser des proxys ou magasins de certificats différents. Si l’URL s’ouvre dans le navigateur, enregistrer sa réponse JSON permet de tester le chemin d’import local pendant le diagnostic de la connexion Node.
+
 ## Stockage et architecture
 
 ```text

@@ -65,7 +65,10 @@ const initialDraft = { name: 'Dark Magician', entries: starter };
 async function jsonRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options);
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+  if (!response.ok)
+    throw new Error(
+      `${data.error || 'Une erreur est survenue.'}${data.code ? ` (${data.code})` : ''}`,
+    );
   return data as T;
 }
 function download(name: string, text: string) {
@@ -111,6 +114,7 @@ export default function DeckBuilder() {
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [target, setTarget] = useState<Zone>('main');
   const [busy, setBusy] = useState('');
+  const [syncError, setSyncError] = useState('');
   const [notice, setNotice] = useState<{ text: string; error: boolean }>();
   const [savedDecks, setSavedDecks] = useState<Deck[]>([]);
   const [modal, setModal] = useState<'catalog' | 'validation' | 'help' | null>(null);
@@ -401,6 +405,7 @@ export default function DeckBuilder() {
   async function synchronize(file?: File) {
     if (file && file.size > 30_000_000) return notify('Fichier JSON limité à 30 Mo.', true);
     setBusy('sync');
+    setSyncError('');
     try {
       const text = file ? await file.text() : undefined;
       const data = await jsonRequest<CatalogStatus>(`/api/catalog${file ? '?action=import' : ''}`, {
@@ -413,6 +418,7 @@ export default function DeckBuilder() {
       setModal(null);
       notify(`${data.count.toLocaleString('fr-FR')} cartes disponibles. Catalogue mis à jour.`);
     } catch (error) {
+      setSyncError((error as Error).message);
       notify((error as Error).message, true);
     } finally {
       setBusy('');
@@ -1208,6 +1214,12 @@ export default function DeckBuilder() {
                     Vérifiez toujours la banlist officielle avant un tournoi.
                   </p>
                 </div>
+                {syncError && (
+                  <div className="warning-note" role="alert">
+                    <TriangleAlert size={17} />
+                    <p>{syncError}</p>
+                  </div>
+                )}
                 <button
                   className="button primary full-width"
                   disabled={!!busy}
