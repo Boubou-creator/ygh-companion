@@ -157,10 +157,10 @@ test('catalog file import publishes valid data and the imported restriction snap
     frameType: card.frame,
     race: card.race,
     attribute: card.attribute ?? undefined,
-    level: card.level ?? undefined,
-    atk: card.atk ?? undefined,
-    def: card.def ?? undefined,
-    archetype: card.archetype ?? undefined,
+    level: card.level === null ? null : String(card.level),
+    atk: card.atk === null ? null : String(card.atk),
+    def: card.def === null ? null : String(card.def),
+    archetype: card.archetype,
     banlist_info:
       card.limit === 0
         ? { ban_tcg: 'Banned' }

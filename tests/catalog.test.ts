@@ -53,3 +53,44 @@ test('excludes tokens and skills and defaults unlisted restrictions to three', (
   assert.equal(cards.length, 1);
   assert.equal(cards[0].limit, 3);
 });
+
+test('accepts nullable provider metadata without inventing zero statistics', () => {
+  const [result] = normalizeCatalog({
+    data: [
+      {
+        ...card,
+        level: null,
+        linkval: null,
+        atk: null,
+        def: null,
+        attribute: null,
+        archetype: null,
+        race: null,
+        frameType: null,
+        banlist_info: null,
+      },
+    ],
+  });
+  assert.equal(result.level, null);
+  assert.equal(result.atk, null);
+  assert.equal(result.def, null);
+  assert.equal(result.attribute, null);
+  assert.equal(result.archetype, null);
+  assert.equal(result.race, '');
+  assert.equal(result.limit, 3);
+});
+test('accepts integer strings and preserves actual zero and unknown-stat sentinels', () => {
+  const [result] = normalizeCatalog({
+    data: [{ ...card, level: '7', linkval: null, atk: '0', def: '-1' }],
+  });
+  assert.equal(result.level, 7);
+  assert.equal(result.atk, 0);
+  assert.equal(result.def, -1);
+  const [link] = normalizeCatalog({ data: [{ ...card, level: null, linkval: '3' }] });
+  assert.equal(link.level, 3);
+});
+test('rejects malformed numeric metadata instead of silently coercing it', () => {
+  for (const value of ['', ' ', 'seven', '3.5', true, {}, 3.5]) {
+    assert.throws(() => normalizeCatalog({ data: [{ ...card, level: value }] }));
+  }
+});

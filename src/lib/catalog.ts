@@ -1,22 +1,39 @@
 import { z } from 'zod';
 import type { Card } from './types';
 import { CatalogSyncError } from './catalog-errors';
+
+// Optional provider metadata may be null. Numeric strings are accepted explicitly;
+// do not use z.coerce.number(), which would turn null and empty strings into zero.
+const optionalInteger = z
+  .union([
+    z.number().int(),
+    z
+      .string()
+      .regex(/^-?\d+$/)
+      .transform(Number)
+      .pipe(z.number().int()),
+  ])
+  .nullish();
+
 const externalCard = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1),
   type: z.string(),
   desc: z.string(),
-  frameType: z.string().optional(),
-  race: z.string().default(''),
-  attribute: z.string().optional(),
-  level: z.number().optional(),
-  linkval: z.number().optional(),
-  atk: z.number().optional(),
-  def: z.number().optional(),
-  archetype: z.string().optional(),
+  frameType: z.string().nullish(),
+  race: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? ''),
+  attribute: z.string().nullish(),
+  level: optionalInteger,
+  linkval: optionalInteger,
+  atk: optionalInteger,
+  def: optionalInteger,
+  archetype: z.string().nullish(),
   banlist_info: z
-    .object({ ban_tcg: z.enum(['Banned', 'Limited', 'Semi-Limited', 'Unlimited']).optional() })
-    .optional(),
+    .object({ ban_tcg: z.enum(['Banned', 'Limited', 'Semi-Limited', 'Unlimited']).nullish() })
+    .nullish(),
   card_images: z
     .array(
       z.object({ id: z.number(), image_url: z.string().url(), image_url_small: z.string().url() }),
