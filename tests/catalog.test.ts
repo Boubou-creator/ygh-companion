@@ -94,3 +94,26 @@ test('rejects malformed numeric metadata instead of silently coercing it', () =>
     assert.throws(() => normalizeCatalog({ data: [{ ...card, level: value }] }));
   }
 });
+
+test('maps known banlist spellings to copy limits, including Forbidden', () => {
+  for (const [status, expected] of [
+    ['Banned', 0],
+    ['Forbidden', 0],
+    [' forbidden ', 0],
+    ['Limited', 1],
+    ['Semi-Limited', 2],
+    ['Semi-Limited ', 2],
+    ['semi limited', 2],
+    ['Unlimited', 3],
+  ] as const) {
+    const [result] = normalizeCatalog({ data: [{ ...card, banlist_info: { ban_tcg: status } }] });
+    assert.equal(result.limit, expected, status);
+  }
+});
+test('never treats an unknown or malformed banlist status as unlimited', () => {
+  for (const status of ['Not a known status', '', false, [], 4]) {
+    assert.throws(() =>
+      normalizeCatalog({ data: [{ ...card, banlist_info: { ban_tcg: status } }] }),
+    );
+  }
+});

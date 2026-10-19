@@ -13,7 +13,8 @@
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "catalog:check": "node --use-env-proxy --import tsx scripts/check-catalog.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

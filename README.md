@@ -54,6 +54,14 @@ Domaines requis : `db.ygoprodeck.com`, `images.ygoprodeck.com`. Sans leur autori
 
 Une erreur de synchronisation reste affichée dans « État des données », avec un code de diagnostic. Le catalogue actif est conservé en cas d’échec.
 
+Pour vérifier le catalogue complet depuis Node, sans modifier la base :
+
+```bash
+npm run catalog:check
+```
+
+Cette commande utilise le même validateur que l’application et affiche jusqu’à 20 champs incompatibles, si nécessaire. Les statuts `Forbidden` et `Banned` sont tous deux interprétés comme une interdiction (zéro exemplaire) ; un statut inconnu reste refusé.
+
 | Code                                        | Signification                                     | Vérification                                                         |
 | ------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
 | `NETWORK_DNS`                               | Node ne résout pas le domaine                     | Connexion et DNS                                                     |

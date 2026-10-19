@@ -15,6 +15,27 @@ const optionalInteger = z
   ])
   .nullish();
 
+// Providers use both "Forbidden" and "Banned" for the same zero-copy rule.
+// Canonicalize known spellings only; an unrecognized restriction must fail import.
+const tcgRestriction = z
+  .string()
+  .transform((value) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_]+/g, '-'),
+  )
+  .pipe(z.enum(['banned', 'forbidden', 'limited', 'semi-limited', 'unlimited']))
+  .transform((value) =>
+    value === 'banned' || value === 'forbidden'
+      ? 0
+      : value === 'limited'
+        ? 1
+        : value === 'semi-limited'
+          ? 2
+          : 3,
+  );
+
 const externalCard = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1),
@@ -31,9 +52,7 @@ const externalCard = z.object({
   atk: optionalInteger,
   def: optionalInteger,
   archetype: z.string().nullish(),
-  banlist_info: z
-    .object({ ban_tcg: z.enum(['Banned', 'Limited', 'Semi-Limited', 'Unlimited']).nullish() })
-    .nullish(),
+  banlist_info: z.object({ ban_tcg: tcgRestriction.nullish() }).nullish(),
   card_images: z
     .array(
       z.object({ id: z.number(), image_url: z.string().url(), image_url_small: z.string().url() }),
@@ -75,14 +94,7 @@ export function normalizeCatalog(input: unknown): Card[] {
         archetype: card.archetype || null,
         image: artwork.image_url,
         imageSmall: artwork.image_url_small,
-        limit:
-          card.banlist_info?.ban_tcg === 'Banned'
-            ? 0
-            : card.banlist_info?.ban_tcg === 'Limited'
-              ? 1
-              : card.banlist_info?.ban_tcg === 'Semi-Limited'
-                ? 2
-                : 3,
+        limit: card.banlist_info?.ban_tcg ?? 3,
         extra: /Fusion|Synchro|XYZ|Link/i.test(card.type),
       };
     });

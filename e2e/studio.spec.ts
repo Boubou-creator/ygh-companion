@@ -163,7 +163,7 @@ test('catalog file import publishes valid data and the imported restriction snap
     archetype: card.archetype,
     banlist_info:
       card.limit === 0
-        ? { ban_tcg: 'Banned' }
+        ? { ban_tcg: 'Forbidden' }
         : card.limit === 1
           ? { ban_tcg: 'Limited' }
           : undefined,
