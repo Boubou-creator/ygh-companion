@@ -532,8 +532,10 @@ main {
   gap: 6px;
   min-width: 0;
 }
-.advanced-filters select {
+.advanced-filters select,
+.advanced-filters input {
   width: 100%;
+  min-width: 0;
   font-size: 10px;
   padding: 6px;
   color: var(--text);
@@ -543,6 +545,27 @@ main {
 }
 .wide-filter {
   grid-column: 1/-1;
+}
+.stat-filter {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.stat-filter legend {
+  margin-bottom: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.stat-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat-range-hint {
+  margin: 6px 0 0;
+  font-size: 10px;
+  color: var(--muted);
 }
 .results-meta {
   display: flex;

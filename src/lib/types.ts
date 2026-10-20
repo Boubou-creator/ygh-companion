@@ -43,5 +43,6 @@ export interface CatalogResponse {
   page: number;
   pages: number;
   archetypes: string[];
+  races: string[];
   status: CatalogStatus;
 }

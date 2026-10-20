@@ -103,6 +103,8 @@ export default function DeckBuilder() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [attribute, setAttribute] = useState('');
+  const [race, setRace] = useState('');
+  const [stats, setStats] = useState({ atkMin: '', atkMax: '', defMin: '', defMax: '' });
   const [level, setLevel] = useState('');
   const [archetype, setArchetype] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -190,6 +192,8 @@ export default function DeckBuilder() {
         q: query,
         category,
         attribute,
+        race,
+        ...stats,
         level,
         archetype,
         page: String(page),
@@ -212,7 +216,7 @@ export default function DeckBuilder() {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [query, category, attribute, level, archetype, page, refresh]);
+  }, [query, category, attribute, race, stats, level, archetype, page, refresh]);
   useEffect(() => {
     if (!uniqueIds) return;
     const controller = new AbortController();
@@ -428,11 +432,20 @@ export default function DeckBuilder() {
     setQuery('');
     setCategory('');
     setAttribute('');
+    setRace('');
+    setStats({ atkMin: '', atkMax: '', defMin: '', defMax: '' });
     setLevel('');
     setArchetype('');
     setPage(1);
   }
-  const filtersCount = [attribute, level, archetype].filter(Boolean).length;
+  const filtersCount = [
+    attribute,
+    race,
+    level,
+    archetype,
+    stats.atkMin || stats.atkMax,
+    stats.defMin || stats.defMax,
+  ].filter(Boolean).length;
   const monsterCount = entries
     .filter((e) => e.zone === 'main' && known[e.cardId]?.category === 'Monster')
     .reduce((sum, e) => sum + e.quantity, 0);
@@ -639,6 +652,21 @@ export default function DeckBuilder() {
                 </div>
                 {filtersOpen && (
                   <div className="advanced-filters">
+                    <label className="wide-filter">
+                      Type de monstre
+                      <select
+                        value={race}
+                        onChange={(e) => {
+                          setRace(e.target.value);
+                          setPage(1);
+                        }}
+                      >
+                        <option value="">Tous les types</option>
+                        {result?.races.map((r) => (
+                          <option key={r}>{r}</option>
+                        ))}
+                      </select>
+                    </label>
                     <label>
                       Attribut
                       <select
@@ -671,6 +699,41 @@ export default function DeckBuilder() {
                         ))}
                       </select>
                     </label>
+                    {(['atk', 'def'] as const).map((stat) => (
+                      <fieldset className="stat-filter wide-filter" key={stat}>
+                        <legend>{stat.toUpperCase()}</legend>
+                        <div className="stat-range">
+                          {(['Min', 'Max'] as const).map((bound) => (
+                            <label key={bound}>
+                              {bound === 'Min' ? 'Minimum' : 'Maximum'}
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder="Sans limite"
+                                aria-label={`${stat.toUpperCase()} ${bound === 'Min' ? 'minimum' : 'maximum'}`}
+                                value={stats[`${stat}${bound}`]}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (
+                                    value &&
+                                    (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+                                  )
+                                    return;
+                                  setStats((old) => ({ ...old, [`${stat}${bound}`]: value }));
+                                  setPage(1);
+                                }}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                        {stats[`${stat}Min`] &&
+                          stats[`${stat}Max`] &&
+                          Number(stats[`${stat}Min`]) > Number(stats[`${stat}Max`]) && (
+                            <p className="stat-range-hint">Le minimum dépasse le maximum.</p>
+                          )}
+                      </fieldset>
+                    ))}
                     <label className="wide-filter">
                       Archétype
                       <select
