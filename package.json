@@ -1,0 +1,35 @@
+{
+  "name": "ygh-companion",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.5.0"
+  },
+  "scripts": {
+    "dev": "node --use-env-proxy node_modules/next/dist/bin/next dev --hostname 0.0.0.0",
+    "build": "node --use-env-proxy node_modules/next/dist/bin/next build",
+    "start": "node --use-env-proxy node_modules/next/dist/bin/next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "catalog:check": "node --use-env-proxy --import tsx scripts/check-catalog.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}
